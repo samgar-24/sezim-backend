@@ -125,3 +125,23 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'raceawm@gmail.com'
 EMAIL_HOST_PASSWORD = 'klur ilel kcla vlwo'
+# 1. Список доверенных источников для CSRF (ОБЯЗАТЕЛЬНО для работы POST/заказов)
+# Сюда нужно вставить URL вашего фронтенда на Vercel
+CSRF_TRUSTED_ORIGINS = [
+    "https://sezim-frontend-k3wn5xaid-samgar-24s-projects.vercel.app",
+    "https://sezim-frontend.vercel.app", # Добавьте основной домен, если он есть
+]
+
+# 2. Настройка CORS (уточнение)
+# Хотя ALLOW_ALL_ORIGINS работает, для безопасности в продакшене лучше использовать:
+CORS_ALLOWED_ORIGINS = [
+    "https://sezim-frontend-k3wn5xaid-samgar-24s-projects.vercel.app",
+]
+
+# 3. Разрешить передачу учетных данных (куки, заголовки авторизации)
+CORS_ALLOW_CREDENTIALS = True
+
+# 4. Безопасность (рекомендуется для Railway)
+# Если ваш бэкенд работает через HTTPS (у Railway это так)
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
