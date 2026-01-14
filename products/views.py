@@ -79,7 +79,7 @@ def create_order(request):
             f"НОМЕР ЗАКАЗА: {order.track_id}\n"
             f"ИТОГО К ОПЛАТЕ: {order.total_price} ₸\n\n"
             f"ВАШИ ТОВАРЫ:\n{items_summary}\n"
-            f"ОТСЛЕДИТЬ: http://localhost:5173/track?id={order.track_id}"
+            f"ОТСЛЕДИТЬ: https://sezim-frontend-k3wn5xaid-samgar-24s-projects.vercel.app/track?id={order.track_id}"
         )
 
         send_mail(subject, message, 'raceawm@gmail.com', [order.email], fail_silently=False)
