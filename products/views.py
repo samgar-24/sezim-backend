@@ -1,5 +1,5 @@
 from django.contrib.auth.models import User
-from django.core.mail import send_mail
+from django.core.mail import send_mail, get_connection
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
@@ -17,7 +17,7 @@ def create_order(request):
     cart_items = data.get('items', [])
     
     try:
-        # 1. Создаем основной заказ
+        # 1. Создаем заказ
         order = Order.objects.create(
             user=request.user if request.user.is_authenticated else None,
             first_name=data.get('first_name'),
@@ -47,28 +47,35 @@ def create_order(request):
         order.total_price = total
         order.save()
 
-        # 2. Почта с жестким таймаутом (чтобы не вешать сервер)
+        # 2. Безопасная отправка почты с таймаутом
         try:
-            from django.core.mail import get_connection
-            connection = get_connection(timeout=3) # Ждем не более 3 секунд
-            
+            connection = get_connection(timeout=3)
             send_mail(
                 f"Заказ №{order.track_id} — SEZIM",
-                f"Рахмет за заказ!\nВаш трек-номер: {order.track_id}\nИтого: {total} ₸",
+                f"Рахмет за заказ!\nВаш трек: {order.track_id}\nИтого: {total} ₸",
                 'raceawm@gmail.com',
                 [order.email],
                 fail_silently=True,
                 connection=connection
             )
-        except Exception as e:
-            logger.error(f"Mail delivery failed/timeout: {e}")
+        except Exception:
+            pass 
 
-        # --- КРИТИЧЕСКИ ВАЖНО: ВОЗВРАЩАЕМ ОТВЕТ ФРОНТЕНДУ ---
         return Response({"track_id": order.track_id}, status=201)
 
     except Exception as e:
         logger.error(f"ORDER ERROR: {str(e)}")
         return Response({"error": str(e)}, status=400)
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def track_order(request, track_id):
+    try:
+        order = Order.objects.get(track_id=track_id)
+        serializer = OrderSerializer(order)
+        return Response(serializer.data)
+    except Order.DoesNotExist:
+        return Response({'error': 'Заказ не найден'}, status=404)
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
@@ -107,14 +114,3 @@ def user_orders(request):
     orders = Order.objects.filter(user=request.user).order_by('-id')
     serializer = OrderSerializer(orders, many=True)
     return Response(serializer.data)
-
-# 4. ОТСЛЕЖИВАНИЕ ЗАКАЗА (Публичное)
-@api_view(['GET'])
-@permission_classes([AllowAny])
-def track_order(request, track_id):
-    try:
-        order = Order.objects.get(track_id=track_id)
-        serializer = OrderSerializer(order)
-        return Response(serializer.data)
-    except Order.DoesNotExist:
-        return Response({'error': 'Заказ не найден'}, status=404)    
