@@ -47,12 +47,12 @@ def create_order(request):
         order.total_price = total
         order.save()
 
-        # 2. Безопасная отправка почты с таймаутом
+        # 2. Почта с таймаутом 3 секунды (не вешает сервер)
         try:
             connection = get_connection(timeout=3)
             send_mail(
-                f"Заказ №{order.track_id} — SEZIM",
-                f"Рахмет за заказ!\nВаш трек: {order.track_id}\nИтого: {total} ₸",
+                f"Заказ №{order.track_id}",
+                f"Спасибо за заказ! Ваш трек: {order.track_id}\nСумма: {total} ₸",
                 'raceawm@gmail.com',
                 [order.email],
                 fail_silently=True,
@@ -61,6 +61,7 @@ def create_order(request):
         except Exception:
             pass 
 
+        # Возвращаем успешный ответ
         return Response({"track_id": order.track_id}, status=201)
 
     except Exception as e:
