@@ -50,24 +50,22 @@ def create_order(request):
         order.save()
 
         # 2. Почта (МАКСИМАЛЬНО БЕЗОПАСНО)
+        # 2. Почта (МАКСИМАЛЬНО БЕЗОПАСНО С ТАЙМАУТОМ)
         try:
-            # Ставим таймаут на уровне функции, если это возможно, 
-            # но fail_silently=True — наш главный спаситель
+            from django.core.mail import get_connection
+            # Принудительно ограничиваем время ожидания соединения 3 секундами
+            connection = get_connection(timeout=3)
+            
             send_mail(
-                f"Заказ №{order.track_id}",
-                f"Спасибо за заказ!\nТрек: {order.track_id}\nСумма: {total} KZT",
+                f"Заказ №{order.track_id} — SEZIM",
+                f"Спасибо за заказ!\nВаш трек-номер: {order.track_id}\nИтого: {total} ₸",
                 'raceawm@gmail.com',
                 [order.email],
-                fail_silently=True
+                fail_silently=True,
+                connection=connection # Передаем безопасное соединение
             )
-        except:
-            pass 
-
-        return Response({"track_id": order.track_id}, status=201)
-
-    except Exception as e:
-        logger.error(f"ORDER ERROR: {str(e)}")
-        return Response({"error": str(e)}, status=400)
+        except Exception as e:
+            logger.error(f"Mail delivery skipped due to connection timeout: {e}")
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
