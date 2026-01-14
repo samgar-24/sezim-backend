@@ -148,5 +148,6 @@ CORS_ALLOW_CREDENTIALS = True
 
 # 4. Безопасность (рекомендуется для Railway)
 # Если ваш бэкенд работает через HTTPS (у Railway это так)
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SECURE = True
+# Настройки для передачи кук между разными доменами
+CSRF_COOKIE_SAMESITE = 'None'
+SESSION_COOKIE_SAMESITE = 'None'
