@@ -107,3 +107,14 @@ def user_orders(request):
     orders = Order.objects.filter(user=request.user).order_by('-id')
     serializer = OrderSerializer(orders, many=True)
     return Response(serializer.data)
+
+# 4. ОТСЛЕЖИВАНИЕ ЗАКАЗА (Публичное)
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def track_order(request, track_id):
+    try:
+        order = Order.objects.get(track_id=track_id)
+        serializer = OrderSerializer(order)
+        return Response(serializer.data)
+    except Order.DoesNotExist:
+        return Response({'error': 'Заказ не найден'}, status=404)    
