@@ -128,14 +128,19 @@ EMAIL_HOST_PASSWORD = 'klur ilel kcla vlwo'
 # 1. Список доверенных источников для CSRF (ОБЯЗАТЕЛЬНО для работы POST/заказов)
 # Сюда нужно вставить URL вашего фронтенда на Vercel
 CSRF_TRUSTED_ORIGINS = [
+    "https://sezim-frontend.vercel.app",
     "https://sezim-frontend-k3wn5xaid-samgar-24s-projects.vercel.app",
-    "https://sezim-frontend.vercel.app", # Добавьте основной домен, если он есть
+    "https://sezim-frontend-5kkosunkm-samgar-24s-projects.vercel.app", # Добавьте основной домен, если он есть
 ]
 
 # 2. Настройка CORS (уточнение)
 # Хотя ALLOW_ALL_ORIGINS работает, для безопасности в продакшене лучше использовать:
 CORS_ALLOWED_ORIGINS = [
     "https://sezim-frontend-k3wn5xaid-samgar-24s-projects.vercel.app",
+    "https://sezim-frontend.vercel.app",
+    "https://sezim-frontend-k3wn5xaid-samgar-24s-projects.vercel.app",
+    "https://sezim-frontend-5kkosunkm-samgar-24s-projects.vercel.app",
+    
 ]
 
 # 3. Разрешить передачу учетных данных (куки, заголовки авторизации)
