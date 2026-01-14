@@ -17,7 +17,7 @@ def create_order(request):
     cart_items = data.get('items', [])
     
     try:
-        # 1. Создаем заказ
+        # 1. Создаем основной заказ
         order = Order.objects.create(
             user=request.user if request.user.is_authenticated else None,
             first_name=data.get('first_name'),
@@ -30,7 +30,6 @@ def create_order(request):
         )
 
         total = 0
-        summary = ""
         for item in cart_items:
             product = Product.objects.get(id=item['id'])
             qty = int(item['quantity'])
@@ -44,28 +43,32 @@ def create_order(request):
                 size=item.get('size')
             )
             total += price * qty
-            summary += f"- {product.name} ({item.get('size')}): {qty} шт.\n"
 
         order.total_price = total
         order.save()
 
-        # 2. Почта (МАКСИМАЛЬНО БЕЗОПАСНО)
-        # 2. Почта (МАКСИМАЛЬНО БЕЗОПАСНО С ТАЙМАУТОМ)
+        # 2. Почта с жестким таймаутом (чтобы не вешать сервер)
         try:
             from django.core.mail import get_connection
-            # Принудительно ограничиваем время ожидания соединения 3 секундами
-            connection = get_connection(timeout=3)
+            connection = get_connection(timeout=3) # Ждем не более 3 секунд
             
             send_mail(
                 f"Заказ №{order.track_id} — SEZIM",
-                f"Спасибо за заказ!\nВаш трек-номер: {order.track_id}\nИтого: {total} ₸",
+                f"Рахмет за заказ!\nВаш трек-номер: {order.track_id}\nИтого: {total} ₸",
                 'raceawm@gmail.com',
                 [order.email],
                 fail_silently=True,
-                connection=connection # Передаем безопасное соединение
+                connection=connection
             )
         except Exception as e:
-            logger.error(f"Mail delivery skipped due to connection timeout: {e}")
+            logger.error(f"Mail delivery failed/timeout: {e}")
+
+        # --- КРИТИЧЕСКИ ВАЖНО: ВОЗВРАЩАЕМ ОТВЕТ ФРОНТЕНДУ ---
+        return Response({"track_id": order.track_id}, status=201)
+
+    except Exception as e:
+        logger.error(f"ORDER ERROR: {str(e)}")
+        return Response({"error": str(e)}, status=400)
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
