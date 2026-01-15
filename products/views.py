@@ -17,7 +17,7 @@ def create_order(request):
     cart_items = data.get('items', [])
     
     try:
-        # 1. Создаем заказ
+        # 1. Создаем основной заказ
         order = Order.objects.create(
             user=request.user if request.user.is_authenticated else None,
             first_name=data.get('first_name'),
@@ -47,27 +47,40 @@ def create_order(request):
         order.total_price = total
         order.save()
 
-        # 2. Почта с таймаутом 3 секунды (не вешает сервер)
+        # 2. Почта с жестким таймаутом (чтобы не вешать сервер)
         try:
             connection = get_connection(timeout=3)
             send_mail(
-                f"Заказ №{order.track_id}",
-                f"Спасибо за заказ! Ваш трек: {order.track_id}\nСумма: {total} ₸",
+                f"Заказ №{order.track_id} — SEZIM",
+                f"Спасибо за заказ!\nТрек: {order.track_id}\nСумма: {total} ₸",
                 'raceawm@gmail.com',
                 [order.email],
                 fail_silently=True,
                 connection=connection
             )
-        except Exception:
-            pass 
+        except Exception as e:
+            logger.error(f"Mail delivery failed: {e}")
 
-        # Возвращаем успешный ответ
+        # ОБЯЗАТЕЛЬНО ВОЗВРАЩАЕМ ОТВЕТ
         return Response({"track_id": order.track_id}, status=201)
 
     except Exception as e:
         logger.error(f"ORDER ERROR: {str(e)}")
         return Response({"error": str(e)}, status=400)
-
+# 5. УПРАВЛЕНИЕ СТАТУСОМ (Для админа)
+@api_view(['PATCH'])
+@permission_classes([IsAdminUser])
+def update_order_status(request, pk):
+    try:
+        order = Order.objects.get(pk=pk)
+        status_value = request.data.get('status')
+        if status_value:
+            order.status = status_value
+            order.save()
+            return Response({'message': 'Статус обновлен'})
+        return Response({'error': 'Статус не указан'}, status=400)
+    except Order.DoesNotExist:
+        return Response({'error': 'Заказ не найден'}, status=404)
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def track_order(request, track_id):
